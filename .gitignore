@@ -1,0 +1,27 @@
+# Environment variables — NEVER commit real secrets
+.env
+.env.local
+
+# Node
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+package-lock.json.bak
+
+# Go
+streaming-service/main
+streaming-service/*.exe
+streaming-service/build/
+
+# Build output
+build/
+dist/
+frontend/dist/
+
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
