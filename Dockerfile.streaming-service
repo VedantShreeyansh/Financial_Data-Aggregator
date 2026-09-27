@@ -1,0 +1,24 @@
+# Dockerfile — builds the Go WebSocket streaming microservice (main.go)
+# Multi-stage build: compile in a full Go image, then ship just the
+# resulting binary in a tiny final image (much smaller, no Go toolchain
+# needed at runtime).
+
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY main.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o streaming-service main.go
+
+# --- Final, minimal runtime image ---
+FROM alpine:3.20
+
+WORKDIR /app
+COPY --from=builder /app/streaming-service .
+
+EXPOSE 8081
+
+CMD ["./streaming-service"]

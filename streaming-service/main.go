@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -49,8 +50,18 @@ var ctx = context.Background()
 var rdb *redis.Client
 
 func main() {
+	// FIXED: this was hardcoded to 127.0.0.1:6379, which works when running
+	// directly on a host machine (WSL or Windows) alongside a local Redis,
+	// but breaks inside Docker — there, Redis is a separate container only
+	// reachable by its service name (e.g. "redis:6379"), not 127.0.0.1.
+	// REDIS_ADDR lets docker-compose.yml override this; it defaults to
+	// 127.0.0.1:6379 for local, non-containerized runs.
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "127.0.0.1:6379"
+	}
 	rdb = redis.NewClient(&redis.Options{
-		Addr: "127.0.0.1:6379",
+		Addr: redisAddr,
 	})
 
 	_, err := rdb.Ping(ctx).Result()
@@ -159,13 +170,15 @@ func main() {
 		}
 	})
 
-	// FIXED: binding to just ":9090" was resulting in an IPv6-only listener
+	// FIXED: binding to just ":8081" was resulting in an IPv6-only listener
 	// inside WSL2, and WSL's port-forwarding relay (wslrelay.exe) only
-	// mirrored the IPv6 side to Windows — so 127.0.0.1:9090 (IPv4, what
+	// mirrored the IPv6 side to Windows — so 127.0.0.1:8081 (IPv4, what
 	// browsers and Test-NetConnection default to) was never reachable from
 	// the Windows side. Binding explicitly to 0.0.0.0 forces an IPv4 listener.
-	fmt.Println("🚀 Go WebSocket server listening on 0.0.0.0:9090")
-	if err := http.ListenAndServe("0.0.0.0:9090", nil); err != nil {
+	fmt.Println("🚀 Go WebSocket server listening on 0.0.0.0:8081")
+	if err := http.ListenAndServe("0.0.0.0:8081", nil); err != nil {
 		fmt.Println("❌ CRITICAL BOOT ERROR:", err)
 	}
 }
+
+
