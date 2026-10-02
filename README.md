@@ -133,3 +133,37 @@ Then open `http://localhost:5173` in your browser.
 - **Containerization (Production Ready):** The entire distributed ecosystem is containerized using multi-stage Docker builds, orchestrating the services, caching tiers, and databases seamlessly via Docker-Compose.
 
 Personal / portfolio project.
+
+That confirms everything is correctly in sync now:
+
+Native Windows Postgres (postgresql-x64-17) — stopped, set to Manual startup, won't interfere again
+WSL's native Postgres — stopped from earlier
+Docker's Postgres container — the single source of truth, matching between docker exec and pgAdmin
+Your database — clean, just vedant1204jsg@gmail.com, no leftover watchlist or alert clutter
+
+Your whole stack is genuinely consolidated onto Docker now, no more ambiguity about which Postgres is "the real one."
+
+// Running PostgreSQL on the docker
+
+Quick reference going forward
+
+Start everything:
+
+powershell
+cd "E:\Projects\Financial Data Aggregator"
+docker compose up -d
+
+Check status:
+
+powershell
+docker compose ps
+
+Database access (pgAdmin now works correctly, or use this for quick checks):
+
+powershell
+docker exec -it financialdataaggregator-postgres-1 psql -U postgres -d financial_db
+
+Stop everything:
+
+powershell
+docker compose down
