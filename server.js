@@ -17,6 +17,7 @@ fastify.register(fastifyCors, {
         'http://localhost:5173', 'http://127.0.0.1:5173',
         'http://localhost:5174', 'http://127.0.0.1:5174',
     ],
+     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
 fastify.register(fastifyJwt, {
@@ -252,6 +253,50 @@ fastify.post('/api/watchlist', async (request, reply) => {
     }
 });
 
+//endpoint for fetching the logged-in user's saved watchlists
+fastify.get('/api/watchlist', async (request, reply) => {
+    try {
+        const decodedUser = await request.jwtVerify();
+
+        const result = await pool.query(
+            'SELECT asset_symbol FROM watchlists WHERE user_id = $1 ORDER BY created_at ASC',
+            [decodedUser.id]
+        );
+
+        const symbols = result.rows.map(row => row.asset_symbol);
+
+        return reply.code(200).send({ symbols });
+    } catch (error) {
+        fastify.log.error(error);
+        if (error.statusCode === 401 || (error.message && error.message.includes('Authorization'))) {
+            return reply.code(401).send({ error: 'Unauthorized: Invalid or missing token' });
+        }
+        return reply.code(500).send({ error: 'Internal Server error' })
+    }
+});
+
+fastify.delete('/api/watchlist/:symbol', async (request, reply) => {
+    try {
+        const decodedUser = await request.jwtVerify();
+        const { symbol } = request.params;
+        const normalizedSymbol = symbol.toUpperCase();
+
+        await pool.query(
+            'DELETE FROM watchlists WHERE user_id = $1 AND asset_symbol = $2',
+            [decodedUser.id, normalizedSymbol]
+        );
+
+        return reply.code(200).send({ success: true, removed: normalizedSymbol });
+    } catch (error) {
+        fastify.log.error(error);
+        if (error.statusCode === 401 || (error.message && error.message.includes('Authorization'))) {
+            return reply.code(401).send({ error: 'Unauthorized: Invalid or missing token' });
+        }
+        return reply.code(500).send({ error: 'Internal Server Error '});
+    }
+});
+
+
 // endpoint for creating a price alert
 fastify.post('/api/alerts', async (request, reply) => {
     try {
@@ -304,6 +349,30 @@ fastify.get('/api/alerts', async (request, reply) => {
         fastify.log.error(error);
         if (error.statusCode === 401 || (error.message && error.message.includes('Authorization'))) {
             return reply.code(401).send({ error: 'Unauthorized: Invalid or missing token' });
+        }
+        return reply.code(500).send({ error: 'Internal Server error' });
+    }
+});
+
+fastify.delete('/api/alerts/:id', async (request, reply) => {
+    try {
+        const decodedUser = await request.jwtVerify();
+        const { id } = request.params;
+
+        const result = await pool.query(
+            'DELETE FROM price_alerts WHERE id = $1 AND user_id = $2 RETURNING id',
+            [id, decodedUser.id]
+        );
+
+        if (result.rows.length == 0) {
+            return reply.code(404).send({ error: 'Alert not found' });
+        }
+
+        return reply.code(200).send({ success: true, deletedId: id });
+    } catch (error) {
+        fastify.log.error(error);
+        if (error.statusCode === 401 || (error.message && error.message.includes('Authorization'))) {
+          return reply.code(401).send({ error: 'Unauthorized: Invalid or missing token' })
         }
         return reply.code(500).send({ error: 'Internal Server error' });
     }

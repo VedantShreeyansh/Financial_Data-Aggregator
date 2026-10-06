@@ -164,3 +164,27 @@ button {
 .muted { color: #8a8f99; font-size: 0.9rem; }
 .error-text { color: #e05252; font-size: 0.9rem; margin: 0; }
 .success-text { color: #3ecf6e; font-size: 0.9rem; margin: 0; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+ 
+.chip-remove {
+  background: transparent;
+  border: none;
+  color: #8a8f99;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+.chip-remove:hover { color: #e05252; }
+.chip-remove:disabled { opacity: 0.5; cursor: default; }
+ 
+.alert-delete-btn {
+  padding: 0.25rem 0.6rem !important;
+  font-size: 0.8rem !important;
+}

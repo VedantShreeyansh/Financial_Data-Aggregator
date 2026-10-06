@@ -10,6 +10,7 @@ export default function Alerts() {
   const [targetPrice, setTargetPrice] = useState('');
   const [direction, setDirection] = useState('above');
   const [status, setStatus] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const loadAlerts = useCallback(async () => {
     try {
@@ -41,6 +42,20 @@ export default function Alerts() {
       loadAlerts();
     } catch (err) {
       setStatus({ type: 'error', message: err.message });
+    }
+  };
+
+   const handleDelete = async (id) => {
+    setStatus(null);
+    setDeletingId(id);
+    try {
+      await apiRequest(`/api/alerts/${id}`, token, { method: 'DELETE' });
+      setAlerts((prev) => prev.filter((a) => a.id !== id));
+      setStatus({ type: 'success', message: 'Alert deleted.' });
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -76,11 +91,12 @@ export default function Alerts() {
             <th>Condition</th>
             <th>Status</th>
             <th>Created</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {alerts.length === 0 ? (
-            <tr><td colSpan={4} className="muted">No alerts yet.</td></tr>
+            <tr><td colSpan={5} className="muted">No alerts yet.</td></tr>
           ) : (
             alerts.map((a) => (
               <tr key={a.id}>
@@ -88,6 +104,16 @@ export default function Alerts() {
                 <td>{a.direction} ₹{Number(a.target_price).toLocaleString('en-IN')}</td>
                 <td>{a.is_active ? 'Active' : 'Triggered'}</td>
                 <td>{new Date(a.created_at).toLocaleString()}</td>
+                   <td>
+                  <button
+                    type="button"
+                    className="secondary-btn alert-delete-btn"
+                    onClick={() => handleDelete(a.id)}
+                    disabled={deletingId === a.id}
+                  >
+                    {deletingId === a.id ? '…' : 'Delete'}
+                  </button>
+                </td>
               </tr>
             ))
           )}
